@@ -226,7 +226,14 @@ void transmitData (unsigned long *currentMillis)
   for(int i=0; i<sensor_size;i++)
   {
     Serial.print(delim);
-    Serial.print(sensor_data[i],1);
+    if(i== 8 || i==9) // GPS Lat and Longitude
+    {
+      Serial.print(sensor_data[i],5);
+    }
+    else
+    {
+      Serial.print(sensor_data[i],1);
+    }
   }
   
   //end transmition
