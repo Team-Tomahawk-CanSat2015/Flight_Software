@@ -1,3 +1,5 @@
+#include <Servo.h>
+
 //THIS CODE IS FOR THE ADAFRUIT 10 DOF SENSOR------
   //CHECK BUTTOM FOR FUNCTIONS
   #include <Wire.h> 
@@ -15,6 +17,8 @@
   Adafruit_L3GD20_Unified gyro = Adafruit_L3GD20_Unified(20); //Gyro deceleration
   
   float seaLevelPressure = SENSORS_PRESSURE_SEALEVELHPA;  /* Update this with the correct SLP for accurate altitude measurements */
+  Servo servo1, servo2;
+  float i_Heading;
   
   //for Stand-Alone Testing:
   void setup(void)
@@ -24,13 +28,19 @@
     
     gyro.enableAutoRange(true);           //Enable auto range gyro
     initilize_Adafruit_10_DOF_Sensors();  //Enable adafruit sensors;
+    servo1.attach(10);
+    servo2.attach(11);
     
+     float y_alpha, x_alpha, z_alpha, z_rollrate, Altitude, Temperature;
+    adafruit_function (&y_alpha, &x_alpha, &z_alpha, &z_rollrate, &Altitude, &Temperature);
+    
+    i_Heading = z_alpha;
   }
   
   
     void loop (){
-    // float y_alpha, x_alpha, z_alpha, z_rollrate, Altitude, Temperature;
-     //adafruit_function (&y_alpha, &x_alpha, &z_alpha, &z_rollrate, &Altitude, &Temperature);
+    float y_alpha, x_alpha, z_alpha, z_rollrate, Altitude, Temperature;
+    adafruit_function (&y_alpha, &x_alpha, &z_alpha, &z_rollrate, &Altitude, &Temperature);
      
      //Serial.print (z_rollrate);
      //Serial.print ("******************");
@@ -41,6 +51,8 @@
      //Serial.print (y_alpha);
      //Serial.println ("******************");
      //delay (50);
+     
+    //stabilize(i_Heading, 6);
     }
   
   
