@@ -1,9 +1,11 @@
+
 /*
 * ---Team Tomahalk Payload Flight Software---
 * File contains the core flight software loop
 */
 
 #include <Wire.h>
+#include <Servo.h>
 unsigned int packet_count;
 
 /**
@@ -24,7 +26,7 @@ const short transmitInterval = 1000;
 //Previous transmit time in milliseconds
 unsigned long previousTransmitTime=0;
 unsigned long currentMillis;
-
+Servo servo1, servo2;
 /**
 *Sensor data variable for loop
 *
@@ -65,6 +67,10 @@ void setup()
     
   //setup GPS
   setupGPS();
+  
+  //Configure servo pins
+  servo1.attach (9);
+  servo1.attach (11);
 }
 
 /**
