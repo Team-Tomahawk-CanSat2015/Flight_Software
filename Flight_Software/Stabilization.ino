@@ -3,20 +3,22 @@
  /*********************************************************************************************************/
   void stabilize (float init_Heading, float descentRate){ //input is heading and descent rate
        
-   //dECELARATIONS  and initilizations
+   //dECELARATIONs
     float headingscaled, ok_offset, fin_angle, deg_rad, gain, y_alpha, x_alpha, z_alpha, z_rollrate, Altitude, Temperature, pos, maxpos, rad_deg;
       bool more_than;
+   //Initilizations
       gain = 0.6;
       ok_offset = 5;
       deg_rad = 3.14159/180;
       rad_deg = 180/3.142;
       maxpos = 45;
+      morethan = false;
       
       adafruit_function (&y_alpha, &x_alpha, &z_alpha, &z_rollrate, &Altitude, &Temperature); //Just used to get the IMU DATA
   
       
       if ( sin(z_alpha) >= sin (init_Heading - ok_offset) && sin(z_alpha) <= sin (init_Heading + ok_offset ) ){ //If CANSAT is close in Okay zone
-      // sideNote: Okay zone is simply when the cansat is +/- 'ok_offset'(5 degrees) from initial heading
+   // sideNote: Okay zone is simply when the cansat is +/- 'ok_offset'(5 degrees) from initial heading
       servo1.write(90);
       servo2.write(90);
       }
