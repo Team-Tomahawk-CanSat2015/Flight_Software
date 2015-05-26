@@ -42,6 +42,7 @@ void ascent() {
   }
 }
 
+  void rocketDeployment_Stabilization() { //CANSAT stabilization/deployment
     /********FUNCTION task*********/
    //NO function task for ascent
 
@@ -58,6 +59,7 @@ void ascent() {
    /********Transition Check*********/
   if (packet_count >  (RocketBurn_time + RocketDelay_time + PayloadDeployDelay_time + WireBurn_time)) {
        state = 5;
+       init_Heading = sensor_data[6]; //initialize heading for fin stabilization
   }
 }
 
@@ -80,4 +82,3 @@ void ascent() {
    //This is terminal stage!! Recover Cansat   
   
   }
-
