@@ -3,10 +3,16 @@
 * ---Team Tomahalk Payload Flight Software---
 * File contains the core flight software loop
 */
-
-#include <Wire.h>
 #include <Servo.h>
-unsigned int packet_count;
+#include <Wire.h>
+#define RocketBurn_time      1.8   //sec //From manual
+#define RocketDelay_time      9    //sec //From Manual
+#define PayloadDeployDelay_time  2    //sec //Estimate
+#define WireBurn_time         4   //sec //Estimate
+
+unsigned int packet_count, ground_alt, liftoff_time;
+unsigned int  init_Heading;
+
 
 /**
 * Flight Software state variable:
@@ -16,7 +22,7 @@ unsigned int packet_count;
 *  3 - Rocket Deployment / Stabilization
 *  4 - Seperation
 *  5 - Descent (Main Payload Action Stage)
-*  6 - Landed 
+*  6 - Landed
 **/
 byte state = 0;
 
@@ -24,7 +30,7 @@ byte state = 0;
 //time between
 const short transmitInterval = 1000;
 //Previous transmit time in milliseconds
-unsigned long previousTransmitTime=0;
+unsigned long previousTransmitTime = 0;
 unsigned long currentMillis;
 Servo servo1, servo2;
 /**
@@ -44,7 +50,7 @@ Servo servo1, servo2;
 * [9] - longitude
 * [10]- z_axis roll Rate (deg/s)
 **/
-byte sensor_size=11;
+byte sensor_size = 11;
 float sensor_data[11];
 
 //used for descent rate calculation
@@ -54,20 +60,21 @@ unsigned long alt_buffer_time[5];
 
 
 
-void setup() 
-{  
+void setup()
+{
   packet_count = 0;
   Serial.begin(9600);
-  
+
   //boot();
-  
+
   //setup for Adafruit 10DoF IMU
   Wire.begin();
   initilize_Adafruit_10_DOF_Sensors();  //Enable adafruit sensors;
-    
+
   //setup GPS
   setupGPS();
-  
+  ground_alt = 0; //GROUND ALTITUDE IN METERS
+
   //Configure servo pins
   servo1.attach (9);
   servo1.attach (11);
@@ -80,44 +87,44 @@ void setup()
 * 3. Save State to memory
 * 4. Transmit data
 **/
-void loop() 
+void loop()
 {
-  
+
   //1. Collect data from sensors and fill Sensor_Data array
-  Collect_Sensor_Data();  
-  
+  Collect_Sensor_Data();
+
   //2. Preform State-specific functions
-  switch(state)
+  switch (state)
   {
     case 1:
-	launch_wait();
+      launch_wait();
     case 2:
-	ascent();
+      ascent();
     case 3:
-	rocketDeployment_Stabilization();
+      rocketDeployment_Stabilization();
     case 4:
-	seperation();
+      seperation();
     case 5:
-	descent();
+      descent();
     case 6:
-	landed();
+      landed();
     default:
       //boot();
       ;
   }
-  
+
   //3. Save State to memory
   saveState();
-  
+
   //4. Transmit data
   currentMillis = millis();
-  if(currentMillis - previousTransmitTime >= transmitInterval)
+  if (currentMillis - previousTransmitTime >= transmitInterval)
   {
     transmitData(&currentMillis);
     //Calibrate time to transmit next interval step
-    previousTransmitTime = currentMillis - currentMillis%transmitInterval;
+    previousTransmitTime = currentMillis - currentMillis % transmitInterval;
   }
-  
+
 }
 
 /**
@@ -125,19 +132,19 @@ void loop()
 * includes: state actions as well as state transition check
 **/
 //TODO
-void launch_wait(){
+/*void launch_wait() {
 }
-void ascent(){
+void ascent() {
 }
-void rocketDeployment_Stabilization(){
+void rocketDeployment_Stabilization() {
 }
-void seperation(){
+void seperation() {
 }
-void descent(){
+void descent() {
 }
-void landed(){
-}
-
+void landed() {
+}*/
+//CHECK stage_Function Tab
 /**
 * Pulls data from sensors to fill the flight software's sensor_data float array
 * Fills according to the sensor_data variable description/layout ie. size of 11
@@ -146,7 +153,7 @@ void Collect_Sensor_Data()
 {
   //local memory hole (52 bytes)
   float alt;
-  float IMU_alt; //IMU,----> altitude from IMU
+  float IMU_alt; //IMU,----> altitude from GPS
   float extTemp; //TMP 36
   float inTemp; //IMU
   float voltage; //TODO
@@ -158,16 +165,16 @@ void Collect_Sensor_Data()
   float latitude; //GPS
   float longitude; //GPS
   float GPS_alt; //GPS,----> altitude from GPS satlite
-  
+
   //adafruit_function (&descentAng, &heading, &alt, &inTemp, &roll);  <----Previous function call #deprecated
   adafruit_function (&y_alpha, &x_alpha, &z_alpha, &z_rollrate, &IMU_alt, &inTemp);
   getGPSdata (&latitude, &longitude, &GPS_alt);
-  
+
   alt = GPS_alt;  //can also be IMU_alt we just need to decide
-  descentRate = calculate_descentRate(&alt,millis());
+  descentRate = calculate_descentRate(&alt, millis());
   extTemp = getExtTemp();
- 
-  
+
+
   sensor_data[0] = alt;
   sensor_data[1] = extTemp;
   sensor_data[2] = inTemp;
@@ -179,7 +186,7 @@ void Collect_Sensor_Data()
   sensor_data[8] = latitude;
   sensor_data[9] = longitude;
   sensor_data[10] = z_rollrate;
-  
+
 }
 
 /**
@@ -190,23 +197,23 @@ void Collect_Sensor_Data()
 float calculate_descentRate(float *new_alt, unsigned long new_alt_timestamp)
 {
   //shift alt_buffer and alt_buffer_time array elements
-  for(byte i = 4; i>0;i--)
+  for (byte i = 4; i > 0; i--)
   {
-    alt_buffer[i] = alt_buffer[i-1];
-    alt_buffer_time[i] = alt_buffer_time[i-1];
+    alt_buffer[i] = alt_buffer[i - 1];
+    alt_buffer_time[i] = alt_buffer_time[i - 1];
   }
   //add new elements
   alt_buffer[0] = *new_alt;
   alt_buffer_time[0] = new_alt_timestamp;
-  
+
   //calculate average of the average descent rates between each altitude step ie. 5->4, 4->3, 3->2, 2->1
-  float sum_average_descent_rate_step =0;
-  
-  for(byte i = 4; i>0;i--)
+  float sum_average_descent_rate_step = 0;
+
+  for (byte i = 4; i > 0; i--)
   {
-    sum_average_descent_rate_step += (alt_buffer[i]-alt_buffer[i-1])/(alt_buffer_time[i-1]-alt_buffer_time[i]);
+    sum_average_descent_rate_step += (alt_buffer[i] - alt_buffer[i - 1]) / (alt_buffer_time[i - 1] - alt_buffer_time[i]);
   }
-  return sum_average_descent_rate_step/4.0;
+  return sum_average_descent_rate_step / 4.0;
 }
 
 
@@ -224,24 +231,24 @@ void transmitData (unsigned long *currentMillis)
   //transmit mission time in seconds
   Serial.print(++ packet_count);// Amount of data sent;
   Serial.print(delim);
-  Serial.print(*currentMillis/1000.0,2);
+  Serial.print(*currentMillis / 1000.0, 2);
   Serial.print(delim);
   Serial.print(state);
-  
+
   //transmit sensor data
-  for(int i=0; i<sensor_size;i++)
+  for (int i = 0; i < sensor_size; i++)
   {
     Serial.print(delim);
-    if(i== 8 || i==9) // GPS Lat and Longitude
+    if (i == 8 || i == 9) // GPS Lat and Longitude
     {
-      Serial.print(sensor_data[i],5);
+      Serial.print(sensor_data[i], 5);
     }
     else
     {
-      Serial.print(sensor_data[i],1);
+      Serial.print(sensor_data[i], 1);
     }
   }
-  
+
   //end transmition
   Serial.println();
 }

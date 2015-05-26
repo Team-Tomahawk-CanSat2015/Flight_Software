@@ -1,6 +1,6 @@
 //THIS CODE IS FOR THE ADAFRUIT 10 DOF SENSOR------
   //CHECK BUTTOM FOR FUNCTIONS
-  #include <Wire.h> 
+  //#include <Wire.h> 
   #include <Adafruit_Sensor.h>
   #include <Adafruit_LSM303_U.h>              
   #include <Adafruit_BMP085_U.h>

@@ -12,7 +12,7 @@
       deg_rad = 3.14159/180;
       rad_deg = 180/3.142;
       maxpos = 45;
-      morethan = false;
+      more_than = false;
       
       adafruit_function (&y_alpha, &x_alpha, &z_alpha, &z_rollrate, &Altitude, &Temperature); //Just used to get the IMU DATA
   
