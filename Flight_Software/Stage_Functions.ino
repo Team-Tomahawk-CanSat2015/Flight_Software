@@ -2,7 +2,7 @@
 /* Stage transition and task Alogorithms/
 **********Sensor data reference************
 sensor_data[0] = alt;
-sensor_data[1] = extTemp;
+sensor_data[1] = m_time;
 sensor_data[2] = inTemp;
 sensor_data[3] = voltage;
 sensor_data[4] = x_alpha;

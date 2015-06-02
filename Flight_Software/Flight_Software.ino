@@ -178,10 +178,10 @@ void Collect_Sensor_Data()
   alt = GPS_alt;  //can also be IMU_alt we just need to decide
   descentRate = calculate_descentRate(&alt, millis());
   extTemp = getExtTemp();
-
+  m_time = a_time - 0;
 
   sensor_data[0] = alt;
-  sensor_data[1] = extTemp;
+  sensor_data[1] = m_time;
   sensor_data[2] = inTemp;
   sensor_data[3] = voltage;
   sensor_data[4] = x_alpha;
