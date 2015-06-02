@@ -1,4 +1,12 @@
 //CODE MAY SEEM ALITTLE STRANGE BUT DO NOT TRY TO MERGE FUNCTIONS OR EDIT TOO MUCH AS ALOT OF VARIABLES ARE DEPENDENT ON OTHERS.---THANKS ---TAYO
+/**
+* GPS usage functions
+*
+* Usage:
+* -run setupGPS(); in setup()
+* -pull data w getGPSdata();
+**/
+
 #include <Adafruit_GPS.h>
 #include <SoftwareSerial.h>
 SoftwareSerial mySerial(3, 2);
@@ -8,23 +16,33 @@ Adafruit_GPS GPS(&mySerial);
 boolean usingInterrupt = false;
 void useInterrupt(boolean);
 
+
+ //For unit Testing:
 void setup()  
 {
   Serial.begin(9600);
+  setupGPS();
+}
+
+void loop (){
+  //GPS needs to fix on a satlite else I set all values to (+ or - 9999)
+  float latitude, longitude, alt;
+  int secsfrom_midnight;
+  getGPSdata (&latitude, &longitude, &alt,  &secsfrom_midnight);
+  
+}
+
+/**
+* Setup GPS
+**/
+void setupGPS()
+{
   GPS.begin(9600);
   GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
   GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);   // 1 Hz update rate
   GPS.sendCommand(PGCMD_ANTENNA);
   useInterrupt(true);
 }
-
-void loop (){
-  //GPS needs to fix on a satlite else I set all values to (+ or - 9999)
-  float latitude, longitude;
-  getGPSdata (&latitude, &longitude);
-  //Serial.println (latitude);
-}
-
 
 
 
@@ -71,13 +89,28 @@ void useInterrupt(boolean v) {
     usingInterrupt = false;
   }
 }
-void getGPSdata(float *latitude, float *longitude)                
+
+/**
+* main GPS Function
+* filles the passed variales for:
+* - latitude
+* - Longitude
+**/
+void getGPSdata(float *latitude, float *longitude, float *altitude, int *secfrom_midnight)                
 {
   GPS.newNMEAreceived();
   GPS.parse(GPS.lastNMEA());
   if (GPS.fix >= 1) {
-      *latitude = GPS.latitudeDegrees;   
-      *longitude = GPS.longitudeDegrees;}
-    else {
-    *latitude = 9999;   *longitude = -9999;}
+      *latitude  = GPS.latitudeDegrees;   
+      *longitude = GPS.longitudeDegrees;
+      *altitude  = GPS.altitude;     
+}
+    else 
+    {
+    *latitude = 9999;   *longitude = -9999;  *altitude = 9999;
+    }
+     
+    //------------------------------------------
+      //Calculate seconds from midnight (0:0:0) 24h hour clock
+      *secfrom_midnight = ( (GPS.hour * 60 *60) + (GPS.minute * 60) + (GPS.seconds) );
 }

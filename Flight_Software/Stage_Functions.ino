@@ -19,6 +19,7 @@ SatDeployDelay = 2 sec;
 Nichromeburn_time = 3 sec:
 /*********************************************************************************************************/
 
+
 void launch_wait() {
   
   /********FUNCTION task*********/
@@ -27,7 +28,7 @@ void launch_wait() {
   /********Transition Check*********/
   if (sensor_data[0] > (ground_alt + 3) && sensor_data[7] != 0) { 
        state = 2;
-       liftoff_time = packet_count; //Register time of liftoff
+       liftoff_time = a_time; //Register time of liftoff
   }
 }
 
@@ -36,8 +37,8 @@ void ascent() {
    //NO function task for ascent
 
    /********Transition Check*********/
-  if (packet_count >  ( RocketBurn_time + RocketDelay_time )  ) { //I guess this is where we need a RTC however i used packet count for now.
-                                                                 //our GPS had an RTC ANS I WILL probably activate that
+  if ( (a_time - liftoff_time) >  ( RocketBurn_time + RocketDelay_time )  ) { //I guess this is where we need a RTC however i used packet count for now.
+                                                                             //our GPS had an RTC ANS I WILL probably activate that
        state = 3;
   }
 }
@@ -47,17 +48,18 @@ void ascent() {
    //NO function task for ascent
 
    /********Transition Check*********/
-  if (packet_count >  (RocketBurn_time + RocketDelay_time + PayloadDeployDelay_time)  ) {  // if (9 +2 + 2) seconds has passed (9 sec delay + 1.8 sec burn + 4 sec to stabilize) 
+  if ( (a_time - liftoff_time) >  (RocketBurn_time + RocketDelay_time + PayloadDeployDelay_time)\
+         || sensor_data[0]  <=  400  ) {  // if (9 +2 + 2) seconds has passed (9 sec delay + 1.8 sec burn + 4 sec to stabilize) 
        state = 4;
   }
 }
 
   void seperation() {
       /********FUNCTION task*********/
-   digitalWrite(5, HIGH);  //Nichrome BURN !!!!!!!!!!!!!
+   digitalWrite(5, HIGH);  //Nichrome BURN BBAABYY!!!!!!!!!!!!!
 
    /********Transition Check*********/
-  if (packet_count >  (RocketBurn_time + RocketDelay_time + PayloadDeployDelay_time + WireBurn_time)) {
+  if ( (a_time - liftoff_time) >  (RocketBurn_time + RocketDelay_time + PayloadDeployDelay_time + WireBurn_time)) {
        state = 5;
        init_Heading = sensor_data[6]; //initialize heading for fin stabilization
   }

@@ -16,19 +16,22 @@ Adafruit_GPS GPS(&mySerial);
 boolean usingInterrupt = false;
 void useInterrupt(boolean);
 
-// For unit Testing:
-//void setup()  
-//{
-//  Serial.begin(9600);
-//  setupGPS();
-//}
-//
-//void loop (){
-//  //GPS needs to fix on a satlite else I set all values to (+ or - 9999)
-//  float latitude, longitude;
-//  getGPSdata (&latitude, &longitude);
-//  //Serial.println (latitude);
-//}
+
+ //For unit Testing:
+/*void setup()  
+{
+  Serial.begin(9600);
+  setupGPS();
+}
+
+void loop (){
+  //GPS needs to fix on a satlite else I set all values to (+ or - 9999)
+  float latitude, longitude, alt;
+  int secsfrom_midnight;
+  getGPSdata (&latitude, &longitude, &alt,  &secsfrom_midnight);
+  
+}
+*/
 
 /**
 * Setup GPS
@@ -94,14 +97,21 @@ void useInterrupt(boolean v) {
 * - latitude
 * - Longitude
 **/
-void getGPSdata(float *latitude, float *longitude, float *altitude)                
+void getGPSdata(float *latitude, float *longitude, float *altitude, int *secfrom_midnight)                
 {
   GPS.newNMEAreceived();
   GPS.parse(GPS.lastNMEA());
   if (GPS.fix >= 1) {
       *latitude  = GPS.latitudeDegrees;   
       *longitude = GPS.longitudeDegrees;
-      *altitude  = GPS.altitude;}
-    else {
-    *latitude = 9999;   *longitude = -9999;  *altitude = 9999;}
+      *altitude  = GPS.altitude;     
+}
+    else 
+    {
+    *latitude = 9999;   *longitude = -9999;  *altitude = 9999;
+    }
+     
+    //------------------------------------------
+      //Calculate seconds from midnight (0:0:0) 24h hour clock
+      *secfrom_midnight = ( (GPS.hour * 60 *60) + (GPS.minute * 60) + (GPS.seconds) );
 }

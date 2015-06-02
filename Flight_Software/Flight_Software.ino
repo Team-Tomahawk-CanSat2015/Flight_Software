@@ -5,13 +5,18 @@
 */
 #include <Servo.h>
 #include <Wire.h>
-#define RocketBurn_time      1.8   //sec //From manual
+#define RocketBurn_time      2   //sec //From manual
 #define RocketDelay_time      9    //sec //From Manual
-#define PayloadDeployDelay_time  2    //sec //Estimate
+#define PayloadDeployDelay_time  5    //sec //Estimate
 #define WireBurn_time         4   //sec //Estimate
 
 unsigned int packet_count, ground_alt, liftoff_time;
 unsigned int  init_Heading;
+
+//---------------
+//Time globals
+ int a_time;  //corresponds to actual time in seconds from midnight
+ int m_time; //corresponds to missiontime or time since we started the mission which we could initilaze
 
 
 /**
@@ -168,7 +173,7 @@ void Collect_Sensor_Data()
 
   //adafruit_function (&descentAng, &heading, &alt, &inTemp, &roll);  <----Previous function call #deprecated
   adafruit_function (&y_alpha, &x_alpha, &z_alpha, &z_rollrate, &IMU_alt, &inTemp);
-  getGPSdata (&latitude, &longitude, &GPS_alt);
+  getGPSdata (&latitude, &longitude, &GPS_alt, &a_time);
 
   alt = GPS_alt;  //can also be IMU_alt we just need to decide
   descentRate = calculate_descentRate(&alt, millis());
