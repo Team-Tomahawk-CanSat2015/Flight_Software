@@ -5,54 +5,38 @@
 #include <EEPROM.h>
 
 
-//for Stand-Alone Testing:
-//void setup() {
-//  // put your setup code here, to run once:
-//
-//}
-//
-//void loop() {
-//  // put your main code here, to run repeatedly:
-//}
-
+void ClearMemory()
+{
+  for (int i = 0; i < 512; i++)
+    EEPROM.write(i, 0);
+}
 
 /**
 * Boot Sequence Method
 * Loads flight software state from memory
-* If no previous state or is landed/end state,
-* Clear memory and set state to Launch Wait.
+* Loads:
+* - State
+* - PacketCount
 **/
-
-// TODO - review interaction with Millis() and Descent_Rate stuff
 void boot()
 {
-  int addr = 0;
-  byte stateFromMemory = EEPROM.read(addr);
+  state = EEPROM.read(0);
+  packet_count = 0;
+  packet_count = EEPROM.read(1);
+  packet_count = packet_count<<8;
+  packet_count |= EEPROM.read(2);
   
-  if(stateFromMemory == 5 || stateFromMemory == 0)
-  {
-    //clear memory
-    for (int i = 0; i < 512; i++)
-    {
-      EEPROM.write(i, 0);
-    }
-    state = 0;
-  }
-  else
-  {
-    //load state from memory
-    state = stateFromMemory;
-  }
 }
 
 /**
 * Save the Flight Software state to memory
 * currently Saving:
 * - Flight State
+* - packetCount
 */
 void saveState()
 {
-  int addr = 0;
-  
-  EEPROM.write(addr,state);
+  EEPROM.write(0,state);
+  EEPROM.write(1,highByte(packet_count));
+  EEPROM.write(2,lowByte(packet_count));
 }

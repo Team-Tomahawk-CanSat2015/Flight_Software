@@ -22,58 +22,7 @@
   
   float seaLevelPressure = SENSORS_PRESSURE_SEALEVELHPA;  /* Update this with the correct SLP for accurate altitude measurements */
   
-  //for Stand-Alone Testing:
-  /*
-  void setup(void)
-  {
-    Wire.begin();
-    Serial.begin(9600);
-    
-    initilize_Adafruit_10_DOF_Sensors();  //Enable adafruit sensors;
-    
-  }
-  
-  
-    void loop (){
-     float y_alpha, x_alpha, z_alpha, z_rollrate, Altitude, Temperature;
-     adafruit_function (&y_alpha, &x_alpha, &z_alpha, &z_rollrate, &Altitude, &Temperature);
-     
-     Serial.print (z_rollrate);
-     Serial.print ("******************");
-     Serial.print (z_alpha);
-     Serial.print ("******************");
-     Serial.print (x_alpha);
-     Serial.print ("******************");
-     Serial.print (y_alpha);
-     Serial.println ("******************");
-     delay (50);
-    }
-    */
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
   
   
   
