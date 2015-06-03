@@ -1,17 +1,20 @@
-
 /*
 * ---Team Tomahalk Payload Flight Software---
 * File contains the core flight software loop
 */
 #include <Servo.h>
 #include <Wire.h>
+
 #define RocketBurn_time      2   //sec //From manual
 #define RocketDelay_time      9    //sec //From Manual
 #define PayloadDeployDelay_time  5    //sec //Estimate
 #define WireBurn_time         4   //sec //Estimate
 
-unsigned int packet_count, ground_alt, liftoff_time;
-unsigned int  init_Heading;
+//define pins
+#define servoOnePin 9
+#define servoTwoPin 11
+#define memResetBtnPin 8
+#define voltageMeasurementPin A0
 
 //---------------
 //Time globals
@@ -32,45 +35,29 @@ unsigned int  init_Heading;
 byte state = 0;
 
 // Transmission variables
-//time between
 const short transmitInterval = 1000;
-//Previous transmit time in milliseconds
 unsigned long previousTransmitTime = 0;
 unsigned long currentMillis;
-Servo servo1, servo2;
-/**
-*Sensor data variable for loop
-*
-* Layout:
-* array pos. - value (units-accuracy)
-* [0] - barometric altitude (m-0.1)
-* [1] - external temp (celcius-1)
-* [2] - internal temp (celcius-1)
-* [3] - voltage (volts-0.05)
-* [4] - x axis angle, "alpha" (degrees)  //Look at IMU for axis referencing
-* [5] - y axis angle, "alpha" (degrees)  //Look at IMU for axis referencing
-* [6] - z axis angle, "alpha" (degrees)  //Look at IMU for axis referencing
-* [7] - descent rate (m/s - 0.1)
-* [8] - latitude
-* [9] - longitude
-* [10]- z_axis roll Rate (deg/s)
-**/
+const char trasmitionDelim = ',';
+
+unsigned int packet_count = 0, liftoff_time;
+unsigned short  init_Heading, ground_alt;
+
+
 byte sensor_size = 11;
 float sensor_data[11];
 
 //used for descent rate calculation
 //stores last 5 altitudes measured with timestamp
-float alt_buffer[5];
-unsigned long alt_buffer_time[5];
+float alt_buffer[5] = {0,0,0,0,0};
+unsigned long alt_buffer_time[5]= {0,0,0,0,0};
 
-
+Servo servo1, servo2;
 
 void setup()
 {
   packet_count = 0;
   Serial.begin(9600);
-
-  //boot();
 
   //setup for Adafruit 10DoF IMU
   Wire.begin();
@@ -81,8 +68,13 @@ void setup()
   ground_alt = 0; //GROUND ALTITUDE IN METERS
 
   //Configure servo pins
-  servo1.attach (9);
-  servo1.attach (11);
+  servo1.attach (servoOnePin);
+  servo2.attach (servoTwoPin);
+
+  if (digitalRead(memResetBtnPin) == HIGH)
+    ClearMemory();
+
+  boot();
 }
 
 /**
@@ -94,6 +86,8 @@ void setup()
 **/
 void loop()
 {
+  if (digitalRead(memResetBtnPin) == HIGH)
+    ClearMemory();
 
   //1. Collect data from sensors and fill Sensor_Data array
   Collect_Sensor_Data();
@@ -114,7 +108,7 @@ void loop()
     case 6:
       landed();
     default:
-      //boot();
+      boot();
       ;
   }
 
@@ -129,39 +123,30 @@ void loop()
     //Calibrate time to transmit next interval step
     previousTransmitTime = currentMillis - currentMillis % transmitInterval;
   }
-
 }
 
-/**
-* Collection of the state-specific funcions
-* includes: state actions as well as state transition check
-**/
-//TODO
-/*void launch_wait() {
-}
-void ascent() {
-}
-void rocketDeployment_Stabilization() {
-}
-void seperation() {
-}
-void descent() {
-}
-void landed() {
-}*/
-//CHECK stage_Function Tab
 /**
 * Pulls data from sensors to fill the flight software's sensor_data float array
-* Fills according to the sensor_data variable description/layout ie. size of 11
+*
+* Layout:
+* array pos. - value (units-accuracy)
+* [0] - altitude (m-0.1)
+* [1] - temp (celcius-1)
+* [2] - voltage (volts-0.05)
+* [3] - x axis angle, "alpha" (degrees)  //Look at IMU for axis referencing
+* [4] - y axis angle, "alpha" (degrees)  //Look at IMU for axis referencing
+* [5] - z axis angle, "alpha" (degrees)  //Look at IMU for axis referencing
+* [6] - descent rate (m/s - 0.1)
+* [7] - latitude
+* [8] - longitude
+* [9]- z_axis roll Rate (deg/s)
+*
 **/
-void Collect_Sensor_Data()
+void Collect_Sensor_Data()//TODO when more sure:: remove local float variables a mem-hole
 {
   //local memory hole (52 bytes)
   float alt;
-  float IMU_alt; //IMU,----> altitude from GPS
-  float extTemp; //TMP 36
-  float inTemp; //IMU
-  float voltage; //TODO
+  float temp; //IMU
   float x_alpha;  //IMU, Angular position relative to Adafruit x Axis
   float y_alpha; //IMU, Angular position relative to Adafruit y Axis
   float z_alpha; //IMU, Heading
@@ -169,21 +154,16 @@ void Collect_Sensor_Data()
   float descentRate; //calculate based on previous alts
   float latitude; //GPS
   float longitude; //GPS
-  float GPS_alt; //GPS,----> altitude from GPS satlite
 
-  //adafruit_function (&descentAng, &heading, &alt, &inTemp, &roll);  <----Previous function call #deprecated
-  adafruit_function (&y_alpha, &x_alpha, &z_alpha, &z_rollrate, &IMU_alt, &inTemp);
-  getGPSdata (&latitude, &longitude, &GPS_alt, &a_time);
+  adafruit_function (&y_alpha, &x_alpha, &z_alpha, &z_rollrate, 0, &temp);
+  getGPSdata (&latitude, &longitude, &alt);
 
-  alt = GPS_alt;  //can also be IMU_alt we just need to decide
   descentRate = calculate_descentRate(&alt, millis());
-  extTemp = getExtTemp();
-  m_time = a_time - 0;
 
   sensor_data[0] = alt;
   sensor_data[1] = m_time;
-  sensor_data[2] = inTemp;
-  sensor_data[3] = voltage;
+  sensor_data[2] = temp;
+  sensor_data[3] = readVoltage;
   sensor_data[4] = x_alpha;
   sensor_data[5] = y_alpha;
   sensor_data[6] = z_alpha;
@@ -191,7 +171,11 @@ void Collect_Sensor_Data()
   sensor_data[8] = latitude;
   sensor_data[9] = longitude;
   sensor_data[10] = z_rollrate;
+}
 
+float readVoltage()
+{
+  return analogRead(voltageMeasurementPin) * 2.0 * (5.0 / 1023.0);
 }
 
 /**
@@ -232,19 +216,18 @@ float calculate_descentRate(float *new_alt, unsigned long new_alt_timestamp)
 **/
 void transmitData (unsigned long *currentMillis)
 {
-  const char delim = ',';
   //transmit mission time in seconds
   Serial.print(++ packet_count);// Amount of data sent;
-  Serial.print(delim);
+  Serial.print(trasmitionDelim);
   Serial.print(*currentMillis / 1000.0, 2);
-  Serial.print(delim);
+  Serial.print(trasmitionDelim);
   Serial.print(state);
 
   //transmit sensor data
   for (int i = 0; i < sensor_size; i++)
   {
-    Serial.print(delim);
-    if (i == 8 || i == 9) // GPS Lat and Longitude
+    Serial.print(trasmitionDelim);
+    if (i == 7 || i == 8) // GPS Lat and Longitude
     {
       Serial.print(sensor_data[i], 5);
     }

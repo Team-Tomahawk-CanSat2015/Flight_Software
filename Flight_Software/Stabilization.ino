@@ -1,6 +1,10 @@
   /*********************************************************************************************************/
  /* Stabilizatin Algortithm Call this function in the stablilization stage*/
  /*********************************************************************************************************/
+
+ 
+
+ 
   void stabilize (float init_Heading, float descentRate){ //input is heading and descent rate
        
    //dECELARATIONs
