@@ -15,16 +15,11 @@
 #define servoTwoPin 11
 #define memResetBtnPin 8
 #define voltageMeasurementPin A0
-
-//---------------
-//Time globals
- int a_time;  //corresponds to actual time in seconds from midnight
- int m_time; //corresponds to missiontime or time since we started the mission which we could initilaze
-
+#define buzzerPin 6
 
 /**
 * Flight Software state variable:
-*  0 - Uninizialized
+*  0 - inizialize
 *  1 - Launch Wait
 *  2 - Ascent
 *  3 - Rocket Deployment / Stabilization
@@ -32,23 +27,27 @@
 *  5 - Descent (Main Payload Action Stage)
 *  6 - Landed
 **/
-byte state = 0;
+byte state;
 
-// Transmission variables
+// Time variables
+unsigned long initialize_time=0-1;
+unsigned long liftoff_time;
+unsigned long a_time;  //corresponds to actual time in miliseconds from midnight
+unsigned long m_time;
 const short transmitInterval = 1000;
-unsigned long previousTransmitTime = 0;
-unsigned long currentMillis;
+
 const char trasmitionDelim = ',';
 
-unsigned int packet_count = 0, liftoff_time;
-unsigned short  init_Heading, ground_alt;
+unsigned int packet_count;
+unsigned int ground_alt;
+float  init_Heading;
 
 
-byte sensor_size = 11;
-float sensor_data[11];
+byte sensor_size = 10;
+float sensor_data[10];
 
 //used for descent rate calculation
-//stores last 5 altitudes measured with timestamp
+//stores last 5 altitudes measured with timestamp //TODO: to figure alt and descent rate
 float alt_buffer[5] = {0,0,0,0,0};
 unsigned long alt_buffer_time[5]= {0,0,0,0,0};
 
@@ -56,7 +55,6 @@ Servo servo1, servo2;
 
 void setup()
 {
-  packet_count = 0;
   Serial.begin(9600);
 
   //setup for Adafruit 10DoF IMU
@@ -65,7 +63,6 @@ void setup()
 
   //setup GPS
   setupGPS();
-  ground_alt = 0; //GROUND ALTITUDE IN METERS
 
   //Configure servo pins
   servo1.attach (servoOnePin);
@@ -95,6 +92,8 @@ void loop()
   //2. Preform State-specific functions
   switch (state)
   {
+    case 0:
+      initialize();
     case 1:
       launch_wait();
     case 2:
@@ -109,19 +108,16 @@ void loop()
       landed();
     default:
       boot();
-      ;
   }
 
   //3. Save State to memory
   saveState();
-
+  
   //4. Transmit data
-  currentMillis = millis();
-  if (currentMillis - previousTransmitTime >= transmitInterval)
+  m_time = a_time-initialize_time;
+  if (m_time - (packet_count*transmitInterval) >= transmitInterval)
   {
-    transmitData(&currentMillis);
-    //Calibrate time to transmit next interval step
-    previousTransmitTime = currentMillis - currentMillis % transmitInterval;
+    transmitData(&m_time);
   }
 }
 
@@ -130,52 +126,30 @@ void loop()
 *
 * Layout:
 * array pos. - value (units-accuracy)
-* [0] - altitude (m-0.1)
-* [1] - temp (celcius-1)
-* [2] - voltage (volts-0.05)
-* [3] - x axis angle, "alpha" (degrees)  //Look at IMU for axis referencing
-* [4] - y axis angle, "alpha" (degrees)  //Look at IMU for axis referencing
-* [5] - z axis angle, "alpha" (degrees)  //Look at IMU for axis referencing
-* [6] - descent rate (m/s - 0.1)
-* [7] - latitude
-* [8] - longitude
+* [0] - temp (celcius-1)
+* [1] - latitude
+* [2] - longitude
+* [3] - altitude (m-0.1)
+* [4] - descent rate (m/s - 0.1)
+* [5] - voltage (volts-0.05)
+* [6] - x axis angle, "alpha" (degrees)  //Look at IMU for axis referencing
+* [7] - y axis angle, "alpha" (degrees)  //Look at IMU for axis referencing
+* [8] - z axis angle, "alpha" (degrees)  //Look at IMU for axis referencing
 * [9]- z_axis roll Rate (deg/s)
 *
 **/
-void Collect_Sensor_Data()//TODO when more sure:: remove local float variables a mem-hole
+void Collect_Sensor_Data()
 {
-  //local memory hole (52 bytes)
-  float alt;
-  float temp; //IMU
-  float x_alpha;  //IMU, Angular position relative to Adafruit x Axis
-  float y_alpha; //IMU, Angular position relative to Adafruit y Axis
-  float z_alpha; //IMU, Heading
-  float z_rollrate; //IMU, rollrate relative to Adafruit z Axis
-  float descentRate; //calculate based on previous alts
-  float latitude; //GPS
-  float longitude; //GPS
-
-  adafruit_function (&y_alpha, &x_alpha, &z_alpha, &z_rollrate, 0, &temp);
-  getGPSdata (&latitude, &longitude, &alt);
-
-  descentRate = calculate_descentRate(&alt, millis());
-
-  sensor_data[0] = alt;
-  sensor_data[1] = m_time;
-  sensor_data[2] = temp;
-  sensor_data[3] = readVoltage;
-  sensor_data[4] = x_alpha;
-  sensor_data[5] = y_alpha;
-  sensor_data[6] = z_alpha;
-  sensor_data[7] = descentRate;
-  sensor_data[8] = latitude;
-  sensor_data[9] = longitude;
-  sensor_data[10] = z_rollrate;
+  adafruit_function (&sensor_data[7], &sensor_data[6], &sensor_data[8], &sensor_data[9], 0, &sensor_data[0]); //(&y_alpha, &x_alpha, &z_alpha, &z_rollrate, 0, &temp)
+  getGPSdata (&sensor_data[1], &sensor_data[2], &sensor_data[3],&a_time); //(&latitude, &longitude, &alt,&time)
+  readVoltage(&sensor_data[4]);
+  sensor_data[5] = calculate_descentRate(&sensor_data[3], &a_time);
+  sensor_data[3] -= ground_alt;
 }
 
-float readVoltage()
+void readVoltage(float* voltage)
 {
-  return analogRead(voltageMeasurementPin) * 2.0 * (5.0 / 1023.0);
+  *voltage =  analogRead(voltageMeasurementPin) * 2.0 * (5.0 / 1023.0);
 }
 
 /**
@@ -183,7 +157,7 @@ float readVoltage()
 * and then calculates an average descent rate based on the previous 5 altitudes
 * returns float value of calculated average descent rate
 **/
-float calculate_descentRate(float *new_alt, unsigned long new_alt_timestamp)
+float calculate_descentRate(float *new_alt, unsigned long *new_alt_timestamp) //TODO: to figure alt and descent rate stuffs
 {
   //shift alt_buffer and alt_buffer_time array elements
   for (byte i = 4; i > 0; i--)
@@ -193,14 +167,14 @@ float calculate_descentRate(float *new_alt, unsigned long new_alt_timestamp)
   }
   //add new elements
   alt_buffer[0] = *new_alt;
-  alt_buffer_time[0] = new_alt_timestamp;
+  alt_buffer_time[0] = *new_alt_timestamp;
 
   //calculate average of the average descent rates between each altitude step ie. 5->4, 4->3, 3->2, 2->1
   float sum_average_descent_rate_step = 0;
 
   for (byte i = 4; i > 0; i--)
   {
-    sum_average_descent_rate_step += (alt_buffer[i] - alt_buffer[i - 1]) / (alt_buffer_time[i - 1] - alt_buffer_time[i]);
+    sum_average_descent_rate_step += (alt_buffer[i] - alt_buffer[i - 1])*1000 / (alt_buffer_time[i - 1] - alt_buffer_time[i]);
   }
   return sum_average_descent_rate_step / 4.0;
 }
@@ -227,9 +201,9 @@ void transmitData (unsigned long *currentMillis)
   for (int i = 0; i < sensor_size; i++)
   {
     Serial.print(trasmitionDelim);
-    if (i == 7 || i == 8) // GPS Lat and Longitude
+    if (i == 1 || i == 2) // GPS Lat and Longitude
     {
-      Serial.print(sensor_data[i], 5);
+      Serial.print(sensor_data[i], 4);
     }
     else
     {

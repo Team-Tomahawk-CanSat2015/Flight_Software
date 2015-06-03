@@ -97,7 +97,7 @@ void useInterrupt(boolean v) {
 * - latitude
 * - Longitude
 **/
-void getGPSdata(float *latitude, float *longitude, float *altitude, int *secfrom_midnight)                
+void getGPSdata(float *latitude, float *longitude, float *altitude, unsigned long *millisFromMidnight)                
 {
   GPS.newNMEAreceived();
   GPS.parse(GPS.lastNMEA());
@@ -105,13 +105,13 @@ void getGPSdata(float *latitude, float *longitude, float *altitude, int *secfrom
       *latitude  = GPS.latitudeDegrees;   
       *longitude = GPS.longitudeDegrees;
       *altitude  = GPS.altitude;     
-}
-    else 
-    {
-    *latitude = 9999;   *longitude = -9999;  *altitude = 9999;
-    }
-     
-    //------------------------------------------
-      //Calculate seconds from midnight (0:0:0) 24h hour clock
-      *secfrom_midnight = ( (GPS.hour * 60 *60) + (GPS.minute * 60) + (GPS.seconds) );
+  }
+  else 
+  {
+  *latitude = 9999;   *longitude = -9999;  *altitude = 9999;
+  }
+   
+  //------------------------------------------
+  //Calculate seconds from midnight (0:0:0) 24h hour clock
+  *millisFromMidnight = ( (GPS.hour * 60 *60*1000) + (GPS.minute * 60*1000) + (GPS.seconds*1000) +GPS.milliseconds);
 }

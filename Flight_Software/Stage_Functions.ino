@@ -1,23 +1,36 @@
 /*********************************************************************************************************/
 /* Stage transition and task Alogorithms/
 **********Sensor data reference************
-sensor_data[0] = alt;
-sensor_data[1] = m_time;
-sensor_data[2] = inTemp;
-sensor_data[3] = voltage;
-sensor_data[4] = x_alpha;
-sensor_data[5] = y_alpha;
-sensor_data[6] = z_alpha;
-sensor_data[7] = descentRate;
-sensor_data[8] = latitude;
-sensor_data[9] = longitude;
-sensor_data[10] = z_rollrate;
+[0] - temp (celcius-1)
+[1] - latitude
+[2] - longitude
+[3] - altitude (m-0.1)
+[4] - descent rate (m/s - 0.1)
+[5] - voltage (volts-0.05)
+[6] - x axis angle, "alpha" (degrees)  //Look at IMU for axis referencing
+[7] - y axis angle, "alpha" (degrees)  //Look at IMU for axis referencing
+[8] - z axis angle, "alpha" (degrees)  //Look at IMU for axis referencing
+[9]- z_axis roll Rate (deg/s)
 /*****************Relevant Times reference ***************
-RocketBurn_time = 1.8s;
+RocketBurn_time = 2s;
 Delay_time = 9 sec;
-SatDeployDelay = 2 sec;
-Nichromeburn_time = 3 sec:
+SatDeployDelay = 5 sec;
+Nichromeburn_time = 4 sec:
 /*********************************************************************************************************/
+void initialize(){
+  //initializaiton task
+  if (initialize_time==0-1)
+  {
+    initialize_time = a_time;
+  }
+  
+  //**Transition Check **/
+  if (sensor_data[1]!=9999) 
+  {
+    ground_alt = sensor_data[3];
+    state = 1;
+  }
+}
 
 
 void launch_wait() {
@@ -26,7 +39,7 @@ void launch_wait() {
    //Reset stuff here
   
   /********Transition Check*********/
-  if (sensor_data[0] > (ground_alt + 3) && sensor_data[7] != 0) { 
+  if (sensor_data[3] > (ground_alt + 5) && sensor_data[4] >1) { 
        state = 2;
        liftoff_time = a_time; //Register time of liftoff
   }
@@ -48,8 +61,7 @@ void ascent() {
    //NO function task for ascent
 
    /********Transition Check*********/
-  if ( (a_time - liftoff_time) >  (RocketBurn_time + RocketDelay_time + PayloadDeployDelay_time)\
-         || sensor_data[0]  <=  400  ) {  // if (9 +2 + 2) seconds has passed (9 sec delay + 1.8 sec burn + 4 sec to stabilize) 
+  if ( (a_time - liftoff_time) >  (RocketBurn_time + RocketDelay_time + PayloadDeployDelay_time)) {  // if (9 +2 + 2) seconds has passed (9 sec delay + 2 sec burn + 5 sec to stabilize) 
        state = 4;
   }
 }
@@ -67,20 +79,21 @@ void ascent() {
 
   void descent() {
    /********FUNCTION task*********/
-   stabilize(init_Heading, sensor_data[7]);  //Fins Activate !!!!!!!!!!!!!
+   stabilize(init_Heading, sensor_data[4]);  //Fins Activate !!!!!!!!!!!!!
 
    /********Transition Check*********/
-  if (sensor_data[0] < (ground_alt + 3) ) {
+  if (sensor_data[3] < (ground_alt + 10) ) {
        state = 6;
   }
   
   
   }
   void landed() {
-   /********FUNCTION task*********/
-   //Buzzer function here  
-   
-   /********Transition Check*********/
-   //This is terminal stage!! Recover Cansat   
-  
+    while(true)
+    {
+      tone (buzzerPin, 262);
+      delay (4000);
+      noTone (buzzerPin);
+      delay (5000);
+    }
   }
