@@ -17,9 +17,11 @@ Delay_time = 9 sec;
 SatDeployDelay = 5 sec;
 Nichromeburn_time = 4 sec:
 /*********************************************************************************************************/
+unsigned int fix_time = 0;
+
 void initialize(){
   //initializaiton task
-  if (initialize_time==0-1)
+  if (initialize_time==0)
   {
     initialize_time = a_time;
   }
@@ -27,8 +29,16 @@ void initialize(){
   //**Transition Check **/
   if (sensor_data[1]!=9999) 
   {
-    ground_alt = sensor_data[3];
-    state = 1;
+    if (fix_time==0)
+      fix_time = a_time;
+    else
+    {
+      if (a_time-fix_time>altCalibrationDuration && sensor_data[4] <0.1 && sensor_data[4]>0.1)
+      {
+         ground_alt = sensor_data[3];
+         state = 1;
+      }
+    }
   }
 }
 

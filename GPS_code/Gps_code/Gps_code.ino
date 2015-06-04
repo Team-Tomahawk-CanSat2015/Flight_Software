@@ -27,8 +27,10 @@ void setup()
 void loop (){
   //GPS needs to fix on a satlite else I set all values to (+ or - 9999)
   float latitude, longitude, alt;
-  int secsfrom_midnight;
+  unsigned long secsfrom_midnight;
   getGPSdata (&latitude, &longitude, &alt,  &secsfrom_midnight);
+  Serial.print("a_time = ");
+  Serial.println(secsfrom_midnight);
   
 }
 
@@ -39,7 +41,8 @@ void setupGPS()
 {
   GPS.begin(9600);
   GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
-  GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);   // 1 Hz update rate
+  GPS.sendCommand(PMTK_SET_NMEA_UPDATE_10HZ);   
+  GPS.sendCommand(PMTK_API_SET_FIX_CTL_5HZ); //5 HZ update
   GPS.sendCommand(PGCMD_ANTENNA);
   useInterrupt(true);
 }
@@ -96,7 +99,7 @@ void useInterrupt(boolean v) {
 * - latitude
 * - Longitude
 **/
-void getGPSdata(float *latitude, float *longitude, float *altitude, int *secfrom_midnight)                
+void getGPSdata(float *latitude, float *longitude, float *altitude, unsigned long *millisFromMidnight)                
 {
   GPS.newNMEAreceived();
   GPS.parse(GPS.lastNMEA());
@@ -104,13 +107,21 @@ void getGPSdata(float *latitude, float *longitude, float *altitude, int *secfrom
       *latitude  = GPS.latitudeDegrees;   
       *longitude = GPS.longitudeDegrees;
       *altitude  = GPS.altitude;     
-}
-    else 
-    {
-    *latitude = 9999;   *longitude = -9999;  *altitude = 9999;
-    }
-     
-    //------------------------------------------
-      //Calculate seconds from midnight (0:0:0) 24h hour clock
-      *secfrom_midnight = ( (GPS.hour * 60 *60) + (GPS.minute * 60) + (GPS.seconds) );
+  }
+  else 
+  {
+  *latitude = 9999;   *longitude = -9999;  *altitude = 9999;
+  }
+   
+  //------------------------------------------
+  //Calculate seconds from midnight (0:0:0) 24h hour clock
+  Serial.print("GPS Time: hour:");
+  Serial.print(GPS.hour);
+  Serial.print(", min:");
+  Serial.print(GPS.minute);
+  Serial.print(", sec:");
+  Serial.print(GPS.seconds);
+  Serial.print(", milli:");
+  Serial.println(GPS.milliseconds);
+  *millisFromMidnight = (GPS.hour * 60 *60*1000) + (GPS.minute * 60*1000) + (GPS.seconds*1000) +GPS.milliseconds;
 }
