@@ -18,6 +18,7 @@
 #define memResetBtnPin 8
 #define voltageMeasurementPin A0
 #define buzzerPin 6
+#define DS1307_I2C_ADDRESS 0x68 //adress of RTC
 
 /**
 * Flight Software state variable:
@@ -35,9 +36,10 @@ byte state;
 unsigned int initialize_time;
 unsigned int fix_time = 0;
 unsigned int liftoff_time;
-unsigned int a_time;  //corresponds to actual time in seconds from midnight
+unsigned long a_time;  //corresponds to actual time in seconds from midnight
 unsigned int prev_Time;
-unsigned int preResetTime=0;
+unsigned int preResetTime=0; 
+// should the time variables above be longs not ints?
 
 const char trasmitionDelim = ',';
 
@@ -133,7 +135,7 @@ void loop()
   saveState();
   
   //4. Transmit data
-  if (a_time - prev_Time > 0)
+  if (a_time - prev_Time > 0) //<-- should this be (>=1) not (>0)
   {
     unsigned int missionTime = a_time-initialize_time;
     transmitData(&missionTime);
@@ -160,8 +162,9 @@ void loop()
 **/
 void Collect_Sensor_Data()
 {
-  adafruit_function (&sensor_data[7], &sensor_data[6], &sensor_data[8], &sensor_data[9], 0, &sensor_data[0]); //(&y_alpha, &x_alpha, &z_alpha, &z_rollrate, 0, &temp)
-  getGPSdata (&sensor_data[1], &sensor_data[2], &sensor_data[3],&a_time); //(&latitude, &longitude, &alt,&time)
+  adafruit_function (&sensor_data[7], &sensor_data[6], &sensor_data[8], &sensor_data[9],  &sensor_data[3], &sensor_data[0]); //(&y_alpha, &x_alpha, &z_alpha, &z_rollrate, (&alt<-- Used), &temp)
+  getGPSdata (&sensor_data[1], &sensor_data[2], 0); //(&latitude, &longitude, (&alt<--Not used))
+  geta_time(&a_time);
   readVoltage(&sensor_data[5]);
   calculate_descentRate(&(sensor_data[3]),&(sensor_data[4]));
   sensor_data[3] -= ground_alt;

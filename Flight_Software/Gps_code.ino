@@ -28,7 +28,7 @@ void loop (){
   //GPS needs to fix on a satlite else I set all values to (+ or - 9999)
   float latitude, longitude, alt;
   int secsfrom_midnight;
-  getGPSdata (&latitude, &longitude, &alt,  &secsfrom_midnight);
+  getGPSdata (&latitude, &longitude, &alt);
   
 }
 */
@@ -97,7 +97,7 @@ void useInterrupt(boolean v) {
 * - latitude
 * - Longitude
 **/
-void getGPSdata(float *latitude, float *longitude, float *altitude, unsigned int *secsFromMidnight)                
+void getGPSdata(float *latitude, float *longitude, float *altitude)                
 {
   GPS.newNMEAreceived();
   GPS.parse(GPS.lastNMEA());
@@ -121,5 +121,5 @@ void getGPSdata(float *latitude, float *longitude, float *altitude, unsigned int
 //  Serial.print(GPS.seconds);
 //  Serial.print(", milli:");
 //  Serial.println(GPS.milliseconds);
-  *secsFromMidnight = (GPS.hour * 60 *60) + (GPS.minute * 60) + (GPS.seconds);
+ // *secsFromMidnight = (GPS.hour * 60 *60) + (GPS.minute * 60) + (GPS.seconds);
 }

@@ -64,6 +64,7 @@
     {float Temp;
      bmp.getTemperature(&Temp);
      *Temperature = Temp;
+       float seaLevelPressure = 1013; //units = hpa
      *Altitude = bmp.pressureToAltitude(seaLevelPressure, bmp_event.pressure, Temp); 
      
      //z_rollrate = gyro_event.gyro.z; //rad/s
