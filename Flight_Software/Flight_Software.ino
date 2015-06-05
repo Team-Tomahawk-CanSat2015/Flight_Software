@@ -9,8 +9,8 @@
 #define RocketDelay_time      9    //sec //From Manual
 #define PayloadDeployDelay_time  5    //sec //Estimate
 #define WireBurn_time         4   //sec //Estimate
-#define altCalibrationDuration 5
-#define descentRateSamplingPause 200
+#define altCalibrationDuration 3
+#define descentRateSamplingPause 500
 
 //define pins
 #define servoOnePin 9
@@ -33,9 +33,11 @@ byte state;
 
 // Time variables
 unsigned int initialize_time;
+unsigned int fix_time = 0;
 unsigned int liftoff_time;
 unsigned int a_time;  //corresponds to actual time in seconds from midnight
 unsigned int prev_Time;
+unsigned int preResetTime=0;
 
 const char trasmitionDelim = ',';
 
@@ -86,6 +88,9 @@ void loop()
 {
   if (digitalRead(memResetBtnPin) == HIGH)
   {
+    sensor_data[4]=0;
+    fix_time = 0;
+    preResetTime = millis();
     ClearMemory();
     boot();
   }
@@ -175,8 +180,9 @@ void readVoltage(float* voltage)
 **/
 void calculate_descentRate(float *new_alt,float *descentRate) //TODO: to figure alt and descent rate stuffs
 {
-  if (millis()-alt_buffer_time[0]>descentRateSamplingPause)
+  if (millis()-alt_buffer_time[0]>descentRateSamplingPause && *new_alt <990 & *new_alt>0)
   {
+
       //shift alt_buffer and alt_buffer_time array elements
       for (byte i = 4; i > 0; i--)
       {
@@ -186,18 +192,35 @@ void calculate_descentRate(float *new_alt,float *descentRate) //TODO: to figure 
       //add new elements
       alt_buffer[0] = *new_alt;
       alt_buffer_time[0] = millis();
+      
+//      Serial.print("Alt_Buffer: ");
+//      for (byte i = 0; i < 5; i++)
+//      {
+//        Serial.print(alt_buffer[i]);
+//        Serial.print(", ");
+//      }
+//      Serial.print("\nAlt_Buf_Time: ");
+//      for (byte i = 0; i < 5; i++)
+//      {
+//        Serial.print(alt_buffer_time[i]);
+//        Serial.print(", ");
+//      }
+//      Serial.println();
     
       //calculate average of the average descent rates between each altitude step ie. 5->4, 4->3, 3->2, 2->1
       float sum_average_descent_rate_step = 0;
       byte numberOfDeltas = 0;
     
-      for (byte i = 0; i < 5; i++)
+      for (byte i = 0; i < 4; i++)
       {
-        float altNewer = alt_buffer_time[i];
-        float altOlder = alt_buffer_time[i+1];
-         if ((alt_buffer_time[i] - alt_buffer_time[i+1])>0  && altOlder<990 && altNewer <990)
+        float altTimeNewer = alt_buffer_time[i];
+        float altTimeOlder = alt_buffer_time[i+1];
+         if ((altTimeNewer - alt_buffer_time[i+1])>0 && altTimeOlder !=0 && altTimeOlder !=0)
          {
-           sum_average_descent_rate_step += (altOlder - altNewer)*1000.0 / (alt_buffer_time[i] - alt_buffer_time[i+1]);
+           float deltaAlt = (alt_buffer[i+1] - alt_buffer[i]);
+//           Serial.print("deltaAlt:");
+//           Serial.println(deltaAlt);
+           sum_average_descent_rate_step += deltaAlt*1000.0 / (altTimeNewer - altTimeOlder);
            numberOfDeltas ++;
          }
       }

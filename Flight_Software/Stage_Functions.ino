@@ -17,21 +17,22 @@ Delay_time = 9 sec;
 SatDeployDelay = 5 sec;
 Nichromeburn_time = 4 sec:
 /*********************************************************************************************************/
-unsigned int fix_time = 0;
-
 //initializaiton task
 void initialize(){
   
   if (initialize_time==0)
   {
-    initialize_time = a_time-(millis()+1)/1000;
+    initialize_time = a_time-(millis()-preResetTime+1)/1000;
+    Serial.print("**Initialize_time: ");
+    Serial.print(initialize_time);
+    Serial.print("  **a_time: ");
+    Serial.println(a_time);
   }
-  
   if (fix_time==0)
     fix_time = a_time;
   else
   {
-    if (a_time-fix_time>altCalibrationDuration && sensor_data[4] <0.1 && sensor_data[4]>0.1)
+    if (a_time-fix_time>altCalibrationDuration && sensor_data[4] <0.1 && sensor_data[4]>-0.1)
     {
        ground_alt = sensor_data[3];
        state = 1;
