@@ -9,8 +9,8 @@
 #define RocketDelay_time      9    //sec //From Manual
 #define PayloadDeployDelay_time  5    //sec //Estimate
 #define WireBurn_time         4   //sec //Estimate
-#define altCalibrationDuration 2000
-#define descentRateSamplingPause 500
+#define altCalibrationDuration 5
+#define descentRateSamplingPause 200
 
 //define pins
 #define servoOnePin 9
@@ -21,7 +21,7 @@
 
 /**
 * Flight Software state variable:
-*  0 - inizialize
+*  0 - initialize
 *  1 - Launch Wait
 *  2 - Ascent
 *  3 - Rocket Deployment / Stabilization
@@ -32,19 +32,16 @@
 byte state;
 
 // Time variables
-unsigned long initialize_time;
-unsigned long liftoff_time;
-unsigned long a_time;  //corresponds to actual time in miliseconds from midnight
-unsigned long m_time;
-const unsigned short transmitInterval = 1000;
-unsigned long previousTransmitTime;
+unsigned int initialize_time;
+unsigned int liftoff_time;
+unsigned int a_time;  //corresponds to actual time in seconds from midnight
+unsigned int prev_Time;
 
 const char trasmitionDelim = ',';
 
 unsigned int packet_count;
 unsigned int ground_alt;
 float  init_Heading;
-
 
 byte sensor_size = 10;
 float sensor_data[10];
@@ -95,53 +92,47 @@ void loop()
 
   //1. Collect data from sensors and fill Sensor_Data array
   Collect_Sensor_Data();
-
+  
   //2. Preform State-specific functions
-  switch (state)
+  if (abs(sensor_data[3]-9999)>1)
   {
-    case 0:
-      initialize();
-      break;
-    case 1:
-      launch_wait();
-      break;
-    case 2:
-      ascent();
-      break;
-    case 3:
-      rocketDeployment_Stabilization();
-      break;
-    case 4:
-      seperation();
-      break;
-    case 5:
-      descent();
-      break;
-    case 6:
-      landed();
-      break;
-    default:
-      boot();
+    switch (state)
+    {
+      case 0:
+        initialize();
+        break;
+      case 1:
+        launch_wait();
+        break;
+      case 2:
+        ascent();
+        break;
+      case 3:
+        rocketDeployment_Stabilization();
+        break;
+      case 4:
+        seperation();
+        break;
+      case 5:
+        descent();
+        break;
+      case 6:
+        landed();
+        break;
+      default:
+        boot();
+    }
   }
 
   //3. Save State to memory
   saveState();
   
   //4. Transmit data
-  m_time = a_time-initialize_time;
-  Serial.print ("***a_time:");
-  Serial.print(a_time);
-  Serial.print (" init_time:");
-  Serial.print(initialize_time);
-  Serial.print (" m_time:");
-  Serial.print(m_time);
-  Serial.print (" previousTransmitTime:");
-  Serial.print(previousTransmitTime);
-  Serial.print("\n");
-  if (m_time - previousTransmitTime >= transmitInterval)
+  if (a_time - prev_Time > 0)
   {
-    transmitData(&m_time);
-    previousTransmitTime = m_time - m_time%transmitInterval;
+    unsigned int missionTime = a_time-initialize_time;
+    transmitData(&missionTime);
+    prev_Time = a_time;
   }
 }
 
@@ -167,7 +158,7 @@ void Collect_Sensor_Data()
   adafruit_function (&sensor_data[7], &sensor_data[6], &sensor_data[8], &sensor_data[9], 0, &sensor_data[0]); //(&y_alpha, &x_alpha, &z_alpha, &z_rollrate, 0, &temp)
   getGPSdata (&sensor_data[1], &sensor_data[2], &sensor_data[3],&a_time); //(&latitude, &longitude, &alt,&time)
   readVoltage(&sensor_data[5]);
-  calculate_descentRate(&sensor_data[3], &a_time,&sensor_data[4]);
+  calculate_descentRate(&(sensor_data[3]),&(sensor_data[4]));
   sensor_data[3] -= ground_alt;
   
 }
@@ -182,9 +173,9 @@ void readVoltage(float* voltage)
 * and then calculates an average descent rate based on the previous 5 altitudes
 * returns float value of calculated average descent rate
 **/
-void calculate_descentRate(float *new_alt, unsigned long *new_alt_timestamp,float *descentRate) //TODO: to figure alt and descent rate stuffs
+void calculate_descentRate(float *new_alt,float *descentRate) //TODO: to figure alt and descent rate stuffs
 {
-  if (*new_alt_timestamp-alt_buffer_time[0]>descentRateSamplingPause)
+  if (millis()-alt_buffer_time[0]>descentRateSamplingPause)
   {
       //shift alt_buffer and alt_buffer_time array elements
       for (byte i = 4; i > 0; i--)
@@ -194,17 +185,20 @@ void calculate_descentRate(float *new_alt, unsigned long *new_alt_timestamp,floa
       }
       //add new elements
       alt_buffer[0] = *new_alt;
-      alt_buffer_time[0] = *new_alt_timestamp;
+      alt_buffer_time[0] = millis();
     
       //calculate average of the average descent rates between each altitude step ie. 5->4, 4->3, 3->2, 2->1
       float sum_average_descent_rate_step = 0;
       byte numberOfDeltas = 0;
     
-      for (byte i = 4; i > 0; i--)
+      for (byte i = 0; i < 5; i++)
       {
-         if ((alt_buffer_time[i - 1] - alt_buffer_time[i])!=0)
+        byte j = i+1;
+         if ((alt_buffer_time[i] - alt_buffer_time[j])>0  && alt_buffer[j]<990)
          {
-           sum_average_descent_rate_step += (alt_buffer[i] - alt_buffer[i - 1])*1000 / (alt_buffer_time[i - 1] - alt_buffer_time[i]);
+           if(alt_buffer[i]>990)
+             continue;
+           sum_average_descent_rate_step += (alt_buffer[j] - alt_buffer[i])*1000.0 / (alt_buffer_time[i] - alt_buffer_time[j]);
            numberOfDeltas ++;
          }
       }
@@ -222,12 +216,12 @@ void calculate_descentRate(float *new_alt, unsigned long *new_alt_timestamp,floa
 * Transmission 2: 33,11,244,55,22,44,222,44
 * ie. ',' delimintes new value, '\n' deliminates new transmission
 **/
-void transmitData (unsigned long *currentMillis)
+void transmitData (unsigned int *missionTime)
 {
   //transmit mission time in seconds
   Serial.print(++ packet_count);// Amount of data sent;
   Serial.print(trasmitionDelim);
-  Serial.print(*currentMillis/1000.0,2);
+  Serial.print(*missionTime);
   Serial.print(trasmitionDelim);
   Serial.print(state);
 
