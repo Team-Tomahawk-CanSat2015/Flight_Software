@@ -40,8 +40,7 @@ void setupGPS()
 {
   GPS.begin(9600);
   GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
-  GPS.sendCommand(PMTK_SET_NMEA_UPDATE_10HZ);   
-  GPS.sendCommand(PMTK_API_SET_FIX_CTL_5HZ); //5 HZ update
+  GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);   
   GPS.sendCommand(PGCMD_ANTENNA);
   useInterrupt(true);
 }
@@ -98,7 +97,7 @@ void useInterrupt(boolean v) {
 * - latitude
 * - Longitude
 **/
-void getGPSdata(float *latitude, float *longitude, float *altitude, unsigned long *millisFromMidnight)                
+void getGPSdata(float *latitude, float *longitude, float *altitude, unsigned int *secsFromMidnight)                
 {
   GPS.newNMEAreceived();
   GPS.parse(GPS.lastNMEA());
@@ -122,5 +121,5 @@ void getGPSdata(float *latitude, float *longitude, float *altitude, unsigned lon
 //  Serial.print(GPS.seconds);
 //  Serial.print(", milli:");
 //  Serial.println(GPS.milliseconds);
-  *millisFromMidnight = (GPS.hour * 60 *60*1000) + (GPS.minute * 60*1000) + (GPS.seconds*1000) +GPS.milliseconds;
+  *secsFromMidnight = (GPS.hour * 60 *60) + (GPS.minute * 60) + (GPS.seconds);
 }

@@ -19,25 +19,22 @@ Nichromeburn_time = 4 sec:
 /*********************************************************************************************************/
 unsigned int fix_time = 0;
 
+//initializaiton task
 void initialize(){
-  //initializaiton task
+  
   if (initialize_time==0)
   {
-    initialize_time = a_time;
+    initialize_time = a_time-(millis()+1)/1000;
   }
   
-  //**Transition Check **/
-  if (sensor_data[1]!=9999) 
+  if (fix_time==0)
+    fix_time = a_time;
+  else
   {
-    if (fix_time==0)
-      fix_time = a_time;
-    else
+    if (a_time-fix_time>altCalibrationDuration && sensor_data[4] <0.1 && sensor_data[4]>0.1)
     {
-      if (a_time-fix_time>altCalibrationDuration && sensor_data[4] <0.1 && sensor_data[4]>0.1)
-      {
-         ground_alt = sensor_data[3];
-         state = 1;
-      }
+       ground_alt = sensor_data[3];
+       state = 1;
     }
   }
 }
