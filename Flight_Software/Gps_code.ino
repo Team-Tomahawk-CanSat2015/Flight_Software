@@ -1,11 +1,11 @@
-//CODE MAY SEEM ALITTLE STRANGE BUT DO NOT TRY TO MERGE FUNCTIONS OR EDIT TOO MUCH AS ALOT OF VARIABLES ARE DEPENDENT ON OTHERS.---THANKS ---TAYO
+/**///CODE MAY SEEM ALITTLE STRANGE BUT DO NOT TRY TO MERGE FUNCTIONS OR EDIT TOO MUCH AS ALOT OF VARIABLES ARE DEPENDENT ON OTHERS.---THANKS ---TAYO
 /**
 * GPS usage functions
 *
 * Usage:
 * -run setupGPS(); in setup()
 * -pull data w getGPSdata();
-**/
+
 
 #include <Adafruit_GPS.h>
 #include <SoftwareSerial.h>
@@ -31,11 +31,11 @@ void loop (){
   getGPSdata (&latitude, &longitude, &alt);
   
 }
-*/
+
 
 /**
 * Setup GPS
-**/
+
 void setupGPS()
 {
   GPS.begin(9600);
@@ -72,7 +72,7 @@ void setupGPS()
 //***********************************************************************************************************************************
 //***********************************************************************************************************************************
 //NESSESARY FUNCTIONS ARE BELOW NO NEED TO EDIT ANY THING JUST COPY PASTE
-/*--DO NOT CROSS----DO NOT CROSS----DO NOT CROSS----DO NOT CROSS----DO NOT CROSS----DO NOT CROSS----DO NOT CROSS----DO NOT CROSS----DO NOT CROSS----DO NOT CROSS----DO NOT CROSS----DO NOT CROSS----DO NOT CROSS----DO NOT CROSS----DO NOT CROSS--*/
+//--DO NOT CROSS----DO NOT CROSS----DO NOT CROSS----DO NOT CROSS----DO NOT CROSS----DO NOT CROSS----DO NOT CROSS----DO NOT CROSS----DO NOT CROSS----DO NOT CROSS----DO NOT CROSS----DO NOT CROSS----DO NOT CROSS----DO NOT CROSS----DO NOT CROSS--
 SIGNAL(TIMER0_COMPA_vect) {
   char c = GPS.read();
 #ifdef UDR0
@@ -96,19 +96,18 @@ void useInterrupt(boolean v) {
 * filles the passed variales for:
 * - latitude
 * - Longitude
-**/
-void getGPSdata(float *latitude, float *longitude, float *altitude)                
+*
+void getGPSdata(float *latitude, float *longitude)                
 {
   GPS.newNMEAreceived();
   GPS.parse(GPS.lastNMEA());
   if (GPS.fix >= 1) {
       *latitude  = GPS.latitudeDegrees;   
       *longitude = GPS.longitudeDegrees;
-      *altitude  = GPS.altitude;     
   }
   else 
   {
-  *latitude = 9999;   *longitude = -9999;  *altitude = 9999;
+  *latitude = 9999;   *longitude = -9999;
   }
    
   //------------------------------------------
@@ -122,4 +121,4 @@ void getGPSdata(float *latitude, float *longitude, float *altitude)
 //  Serial.print(", milli:");
 //  Serial.println(GPS.milliseconds);
  // *secsFromMidnight = (GPS.hour * 60 *60) + (GPS.minute * 60) + (GPS.seconds);
-}
+}**/

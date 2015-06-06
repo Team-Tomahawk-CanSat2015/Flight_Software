@@ -64,19 +64,16 @@ void setup()
   //setup for Adafruit 10DoF IMU
   Wire.begin();
   initilize_Adafruit_10_DOF_Sensors();  //Enable adafruit sensors;
-
-  //setup GPS
-  setupGPS();
-
+    
   //Configure servo pins
   servo1.attach (servoOnePin);
   servo2.attach (servoTwoPin);
-
+  
   if (digitalRead(memResetBtnPin) == HIGH)
     ClearMemory();
 
   boot();
- 
+
 }
 
 /**
@@ -163,7 +160,8 @@ void loop()
 void Collect_Sensor_Data()
 {
   adafruit_function (&sensor_data[7], &sensor_data[6], &sensor_data[8], &sensor_data[9],  &sensor_data[3], &sensor_data[0]); //(&y_alpha, &x_alpha, &z_alpha, &z_rollrate, (&alt<-- Used), &temp)
-  getGPSdata (&sensor_data[1], &sensor_data[2], 0); //(&latitude, &longitude, (&alt<--Not used))
+  sensor_data[1] = 0;
+  sensor_data[2] = 0;
   geta_time(&a_time);
   readVoltage(&sensor_data[5]);
   calculate_descentRate(&(sensor_data[3]),&(sensor_data[4]));

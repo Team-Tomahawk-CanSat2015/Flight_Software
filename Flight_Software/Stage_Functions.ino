@@ -97,6 +97,7 @@ void ascent() {
   
   }
   void landed() {
+    //TODO: setup GPS for landed state
     while(true)
     {
       tone (buzzerPin, 262);
