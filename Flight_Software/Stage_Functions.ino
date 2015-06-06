@@ -47,7 +47,7 @@ void launch_wait() {
    //Reset stuff here
   
   /********Transition Check*********/
-  if (sensor_data[3] > (ground_alt + 5) && sensor_data[4] >1) { 
+  if (sensor_data[3] >  5 && sensor_data[4] >1) { 
        state = 2;
        liftoff_time = a_time; //Register time of liftoff
   }
@@ -90,7 +90,7 @@ void ascent() {
    stabilize(init_Heading, sensor_data[4]);  //Fins Activate !!!!!!!!!!!!!
 
    /********Transition Check*********/
-  if (sensor_data[3] < (ground_alt + 10) ) {
+  if (sensor_data[3] < 10 ) {
        state = 6;
   }
   
