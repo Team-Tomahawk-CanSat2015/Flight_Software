@@ -28,7 +28,7 @@
     
     gyro.enableAutoRange(true);           //Enable auto range gyro
     initilize_Adafruit_10_DOF_Sensors();  //Enable adafruit sensors;
-    servo1.attach(10);
+    servo1.attach(9);
     servo2.attach(11);
     
      float y_alpha, x_alpha, z_alpha, z_rollrate, Altitude, Temperature;
@@ -52,7 +52,7 @@
      //Serial.println ("******************");
      //delay (50);
      
-    //stabilize(i_Heading, 6);
+    stabilize(i_Heading, 6);
     }
   
   

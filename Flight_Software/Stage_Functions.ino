@@ -17,16 +17,20 @@ Delay_time = 9 sec;
 SatDeployDelay = 5 sec;
 Nichromeburn_time = 4 sec:
 /*********************************************************************************************************/
+
+unsigned long prevToneTime=0;
+boolean landedSetupFlag = false;
+
 //initializaiton task
 void initialize(){
   
   if (initialize_time==0)
   {
     initialize_time = a_time-(millis()-preResetTime+1)/1000;
-    Serial.print("**Initialize_time: ");
-    Serial.print(initialize_time);
-    Serial.print("  **a_time: ");
-    Serial.println(a_time);
+//    Serial.print("**Initialize_time: ");
+//    Serial.print(initialize_time);
+//    Serial.print("  **a_time: ");
+//    Serial.println(a_time);
   }
   if (fix_time==0)
     fix_time = a_time;
@@ -47,7 +51,7 @@ void launch_wait() {
    //Reset stuff here
   
   /********Transition Check*********/
-  if (sensor_data[3] > (ground_alt + 5) && sensor_data[4] >1) { 
+  if (sensor_data[3] >  5+ground_alt && sensor_data[4] <-5) { 
        state = 2;
        liftoff_time = a_time; //Register time of liftoff
   }
@@ -90,19 +94,23 @@ void ascent() {
    stabilize(init_Heading, sensor_data[4]);  //Fins Activate !!!!!!!!!!!!!
 
    /********Transition Check*********/
-  if (sensor_data[3] < (ground_alt + 10) ) {
-       state = 6;
+  if (sensor_data[3] < 10 +ground_alt) {
+      state = 6;
   }
   
   
   }
   void landed() {
-    //TODO: setup GPS for landed state
-    while(true)
-    {
-      tone (buzzerPin, 262);
-      delay (4000);
-      noTone (buzzerPin);
-      delay (5000);
-    }
+      if (!landedSetupFlag)
+      {
+        servo1.detach();
+        servo2.detach();
+        setupGPS();
+      }
+      getGPSdata(&sensor_data[1],&sensor_data[2]);
+      if (millis()-prevToneTime>=10000)
+      {
+        tone (buzzerPin, 262,4000);
+        prevToneTime = millis();
+      }
   }

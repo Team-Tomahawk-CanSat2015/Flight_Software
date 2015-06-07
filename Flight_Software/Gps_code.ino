@@ -5,11 +5,12 @@
 * Usage:
 * -run setupGPS(); in setup()
 * -pull data w getGPSdata();
+*/
 
 
 #include <Adafruit_GPS.h>
 #include <SoftwareSerial.h>
-SoftwareSerial mySerial(3, 2);
+SoftwareSerial mySerial(2, 3);
 Adafruit_GPS GPS(&mySerial);
 #define GPSECHO  true
 
@@ -31,11 +32,12 @@ void loop (){
   getGPSdata (&latitude, &longitude, &alt);
   
 }
+*/
 
 
 /**
 * Setup GPS
-
+**/
 void setupGPS()
 {
   GPS.begin(9600);
@@ -96,7 +98,7 @@ void useInterrupt(boolean v) {
 * filles the passed variales for:
 * - latitude
 * - Longitude
-*
+*/
 void getGPSdata(float *latitude, float *longitude)                
 {
   GPS.newNMEAreceived();
@@ -121,4 +123,4 @@ void getGPSdata(float *latitude, float *longitude)
 //  Serial.print(", milli:");
 //  Serial.println(GPS.milliseconds);
  // *secsFromMidnight = (GPS.hour * 60 *60) + (GPS.minute * 60) + (GPS.seconds);
-}**/
+}

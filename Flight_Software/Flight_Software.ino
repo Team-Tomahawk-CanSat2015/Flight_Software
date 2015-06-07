@@ -9,7 +9,7 @@
 #define RocketDelay_time      9    //sec //From Manual
 #define PayloadDeployDelay_time  5    //sec //Estimate
 #define WireBurn_time         4   //sec //Estimate
-#define altCalibrationDuration 3
+#define altCalibrationDuration 10
 #define descentRateSamplingPause 500
 
 //define pins
@@ -33,11 +33,11 @@
 byte state;
 
 // Time variables
-unsigned int initialize_time;
-unsigned int fix_time = 0;
-unsigned int liftoff_time;
+unsigned long initialize_time;
+unsigned long fix_time = 0;
+unsigned long liftoff_time;
 unsigned long a_time;  //corresponds to actual time in seconds from midnight
-unsigned int prev_Time;
+unsigned long prev_Time;
 unsigned int preResetTime=0; 
 // should the time variables above be longs not ints?
 
@@ -51,7 +51,7 @@ byte sensor_size = 10;
 float sensor_data[10];
 
 //used for descent rate calculation
-//stores last 5 altitudes measured with timestamp //TODO: to figure alt and descent rate
+//stores last 5 altitudes measured with timestamp
 float alt_buffer[5];
 unsigned long alt_buffer_time[5];
 
@@ -64,7 +64,7 @@ void setup()
   //setup for Adafruit 10DoF IMU
   Wire.begin();
   initilize_Adafruit_10_DOF_Sensors();  //Enable adafruit sensors;
-    
+  
   //Configure servo pins
   servo1.attach (servoOnePin);
   servo2.attach (servoTwoPin);
@@ -98,41 +98,38 @@ void loop()
   Collect_Sensor_Data();
   
   //2. Preform State-specific functions
-  if (sensor_data[3]<990)
+  switch (state)
   {
-    switch (state)
-    {
-      case 0:
-        initialize();
-        break;
-      case 1:
-        launch_wait();
-        break;
-      case 2:
-        ascent();
-        break;
-      case 3:
-        rocketDeployment_Stabilization();
-        break;
-      case 4:
-        seperation();
-        break;
-      case 5:
-        descent();
-        break;
-      case 6:
-        landed();
-        break;
-      default:
-        boot();
-    }
+    case 0:
+      initialize();
+      break;
+    case 1:
+      launch_wait();
+      break;
+    case 2:
+      ascent();
+      break;
+    case 3:
+      rocketDeployment_Stabilization();
+      break;
+    case 4:
+      seperation();
+      break;
+    case 5:
+      descent();
+      break;
+    case 6:
+      landed();
+      break;
+    default:
+      boot();
   }
 
   //3. Save State to memory
   saveState();
   
   //4. Transmit data
-  if (a_time - prev_Time > 0) //<-- should this be (>=1) not (>0)
+  if (a_time - prev_Time >=1)
   {
     unsigned int missionTime = a_time-initialize_time;
     transmitData(&missionTime);
@@ -165,7 +162,6 @@ void Collect_Sensor_Data()
   geta_time(&a_time);
   readVoltage(&sensor_data[5]);
   calculate_descentRate(&(sensor_data[3]),&(sensor_data[4]));
-  sensor_data[3] -= ground_alt;
   
 }
 
@@ -179,9 +175,9 @@ void readVoltage(float* voltage)
 * and then calculates an average descent rate based on the previous 5 altitudes
 * returns float value of calculated average descent rate
 **/
-void calculate_descentRate(float *new_alt,float *descentRate) //TODO: to figure alt and descent rate stuffs
+void calculate_descentRate(float *new_alt,float *descentRate)
 {
-  if (millis()-alt_buffer_time[0]>descentRateSamplingPause && *new_alt <990 & *new_alt>0)
+  if (millis()-alt_buffer_time[0]>descentRateSamplingPause & *new_alt>0)
   {
 
       //shift alt_buffer and alt_buffer_time array elements
@@ -214,14 +210,9 @@ void calculate_descentRate(float *new_alt,float *descentRate) //TODO: to figure 
     
       for (byte i = 0; i < 4; i++)
       {
-        float altTimeNewer = alt_buffer_time[i];
-        float altTimeOlder = alt_buffer_time[i+1];
-         if ((altTimeNewer - alt_buffer_time[i+1])>0 && altTimeOlder !=0 && altTimeOlder !=0)
+         if ((alt_buffer_time[i] - alt_buffer_time[i+1])>0 && alt_buffer_time[i+1] !=0)
          {
-           float deltaAlt = (alt_buffer[i+1] - alt_buffer[i]);
-//           Serial.print("deltaAlt:");
-//           Serial.println(deltaAlt);
-           sum_average_descent_rate_step += deltaAlt*1000.0 / (altTimeNewer - altTimeOlder);
+           sum_average_descent_rate_step += (alt_buffer[i+1] - alt_buffer[i])*1000.0 / (alt_buffer_time[i] - alt_buffer_time[i+1]);
            numberOfDeltas ++;
          }
       }
