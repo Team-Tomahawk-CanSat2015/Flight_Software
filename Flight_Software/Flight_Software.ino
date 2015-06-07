@@ -9,7 +9,7 @@
 #define RocketDelay_time      9    //sec //From Manual
 #define PayloadDeployDelay_time  5    //sec //Estimate
 #define WireBurn_time         4   //sec //Estimate
-#define altCalibrationDuration 5
+#define altCalibrationDuration 10
 #define descentRateSamplingPause 500
 
 //define pins
@@ -64,7 +64,7 @@ void setup()
   //setup for Adafruit 10DoF IMU
   Wire.begin();
   initilize_Adafruit_10_DOF_Sensors();  //Enable adafruit sensors;
-    
+  
   //Configure servo pins
   servo1.attach (servoOnePin);
   servo2.attach (servoTwoPin);
@@ -162,7 +162,6 @@ void Collect_Sensor_Data()
   geta_time(&a_time);
   readVoltage(&sensor_data[5]);
   calculate_descentRate(&(sensor_data[3]),&(sensor_data[4]));
-  sensor_data[3] -= ground_alt;
   
 }
 

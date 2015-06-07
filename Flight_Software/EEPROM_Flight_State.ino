@@ -34,19 +34,19 @@ void boot()
   location+=EEPROM_readAnything(location,alt_buffer);
   location+=EEPROM_readAnything(location,alt_buffer_time);
   
-  Serial.println ("***boot***");
-  Serial.print(state);
-  Serial.print(",");
-  Serial.print(packet_count);
-  Serial.print(",");
-  Serial.print(initialize_time);
-  Serial.print(",");
-  Serial.print(prev_Time);
-  Serial.print(",");
-  Serial.print(liftoff_time);
-  Serial.print(",");
-  Serial.print(ground_alt);
-  Serial.print("\n");
+//  Serial.println ("***boot***");
+//  Serial.print(state);
+//  Serial.print(",");
+//  Serial.print(packet_count);
+//  Serial.print(",");
+//  Serial.print(initialize_time);
+//  Serial.print(",");
+//  Serial.print(prev_Time);
+//  Serial.print(",");
+//  Serial.print(liftoff_time);
+//  Serial.print(",");
+//  Serial.print(ground_alt);
+//  Serial.print("\n");
 }
 
 /**

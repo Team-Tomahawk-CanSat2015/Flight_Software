@@ -9,7 +9,7 @@
 
 #include <Adafruit_GPS.h>
 #include <SoftwareSerial.h>
-SoftwareSerial mySerial(3, 2);
+SoftwareSerial mySerial(2, 3);
 Adafruit_GPS GPS(&mySerial);
 #define GPSECHO  true
 
@@ -29,9 +29,9 @@ void loop (){
   float latitude, longitude, alt;
   unsigned long secsfrom_midnight;
   getGPSdata (&latitude, &longitude, &alt,  &secsfrom_midnight);
-  Serial.print("a_time = ");
-  Serial.println(secsfrom_midnight);
-  
+  Serial.print("alt = ");
+  Serial.println(alt);
+  delay(1000);
 }
 
 /**
@@ -41,8 +41,7 @@ void setupGPS()
 {
   GPS.begin(9600);
   GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
-  GPS.sendCommand(PMTK_SET_NMEA_UPDATE_10HZ);   
-  GPS.sendCommand(PMTK_API_SET_FIX_CTL_5HZ); //5 HZ update
+  GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);
   GPS.sendCommand(PGCMD_ANTENNA);
   useInterrupt(true);
 }
