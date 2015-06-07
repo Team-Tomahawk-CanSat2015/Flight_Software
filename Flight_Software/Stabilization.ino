@@ -40,12 +40,12 @@
             if (z_rollrate <= 0)  //based on the direction of spin f the cansat * I (Tayo) will still change this if its oposite
             maxpos = -maxpos;    
             
-                 servo1.write(90 + maxpos);
+                 servo1.write(90 - maxpos);
                  servo2.write(90 - maxpos);
                  break;
                  
             case (false):
-                 servo1.write(90 + fin_angle);
+                 servo1.write(90 - fin_angle);
                  servo2.write(90 - fin_angle);
                  break;
       }
