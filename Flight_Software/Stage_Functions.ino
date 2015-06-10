@@ -74,7 +74,7 @@ void ascent() {
    //NO function task for ascent
 
    /********Transition Check*********/
-  if ( (a_time - liftoff_time) >  (RocketBurn_time + RocketDelay_time + PayloadDeployDelay_time)) {  // if (9 +2 + 2) seconds has passed (9 sec delay + 2 sec burn + 5 sec to stabilize) 
+  if ( (a_time - liftoff_time) >  (RocketBurn_time + RocketDelay_time + PayloadDeployDelay_time) && sensor_data[4]> 5) {  // if (9 +2 + 2) seconds has passed (9 sec delay + 2 sec burn + 5 sec to stabilize) 
        state = 4;
   }
 }
