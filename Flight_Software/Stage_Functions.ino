@@ -40,7 +40,7 @@ void initialize(){
     if (a_time-fix_time>altCalibrationDuration && sensor_data[4] <0.1 && sensor_data[4]>-0.1)
     {
        ground_alt = sensor_data[3];
-       //state = 1;
+       state = 1;
     }
   }
 }
