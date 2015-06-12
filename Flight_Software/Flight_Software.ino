@@ -2,6 +2,7 @@
 * ---Team Tomahalk Payload Flight Software---
 * File contains the core flight software loop
 */
+
 #include <Servo.h>
 #include <Wire.h>
 
@@ -11,6 +12,9 @@
 #define WireBurn_time         4   //sec //Estimate
 #define altCalibrationDuration 10
 #define descentRateSamplingPause 500
+#define telemtryRate 1 //sec
+#define acsentTransitionAlt 20
+#define landedTransitionAlt 40
 
 //define pins
 #define servoOnePin 9
@@ -18,7 +22,10 @@
 #define memResetBtnPin 8
 #define voltageMeasurementPin A0
 #define buzzerPin 6
+#define nichromePin 5
 #define DS1307_I2C_ADDRESS 0x68 //adress of RTC
+
+boolean mock = false; //SET TO FALSE FOR ACTUAL FLIGHT!
 
 /**
 * Flight Software state variable:
@@ -35,7 +42,7 @@ byte state;
 // Time variables
 unsigned long initialize_time;
 unsigned long fix_time = 0;
-unsigned long liftoff_time;
+unsigned long stateStartTime;
 unsigned long a_time;  //corresponds to actual time in seconds from midnight
 unsigned long prev_Time;
 unsigned int preResetTime=0; 
@@ -67,11 +74,17 @@ void setup()
   Wire.begin();
   initilize_Adafruit_10_DOF_Sensors();  //Enable adafruit sensors;
   
+  servo1.attach (servoOnePin);
+  servo2.attach (servoTwoPin);
+  servo1.write(90);
+  servo2.write(90);
+  servo1.detach();
+  servo2.detach();
+  
   if (digitalRead(memResetBtnPin) == HIGH)
     ClearMemory();
 
   boot();
-
 }
 
 /**
@@ -128,7 +141,7 @@ void loop()
   saveState();
   
   //4. Transmit data
-  if (a_time - prev_Time >=1)
+  if (a_time - prev_Time >=telemtryRate)
   {
     unsigned int missionTime = a_time-initialize_time;
     transmitData(&missionTime);
@@ -177,7 +190,7 @@ void readVoltage(float* voltage)
 **/
 void calculate_descentRate(float *new_alt,float *descentRate)
 {
-  if (millis()-alt_buffer_time[0]>descentRateSamplingPause & *new_alt>0)
+  if (millis()-alt_buffer_time[0]>=descentRateSamplingPause & *new_alt>0)
   {
 
       //shift alt_buffer and alt_buffer_time array elements

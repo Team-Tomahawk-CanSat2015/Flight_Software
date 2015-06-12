@@ -18,6 +18,7 @@ SatDeployDelay = 5 sec;
 Nichromeburn_time = 4 sec:
 /*********************************************************************************************************/
 
+//Non time (reset protect) important
 unsigned long prevToneTime=0;
 boolean landedSetupFlag = false;
 boolean descentSetupFlag = false;
@@ -52,9 +53,9 @@ void launch_wait() {
    //Reset stuff here
   
   /********Transition Check*********/
-  if (sensor_data[3] >  20+ground_alt && sensor_data[4] <-5) { 
+  if (sensor_data[3] >  acsentTransitionAlt+ground_alt && sensor_data[4] <-5) { 
        state = 2;
-       liftoff_time = a_time; //Register time of liftoff
+       stateStartTime = a_time; //Register time of liftoff
   }
 }
 
@@ -63,9 +64,10 @@ void ascent() {
    //NO function task for ascent
 
    /********Transition Check*********/
-  if ( (a_time - liftoff_time) >  ( RocketBurn_time + RocketDelay_time )  ) { //I guess this is where we need a RTC however i used packet count for now.
-                                                                             //our GPS had an RTC ANS I WILL probably activate that
+  if ( (a_time - stateStartTime) >  ( RocketBurn_time + RocketDelay_time )  ) { //I guess this is where we need a RTC however i used packet count for now.
+                                                                               //our GPS had an RTC ANS I WILL probably activate that
        state = 3;
+       stateStartTime = a_time;
   }
 }
 
@@ -74,19 +76,21 @@ void ascent() {
    //NO function task for ascent
 
    /********Transition Check*********/
-  if ( (a_time - liftoff_time) >  (RocketBurn_time + RocketDelay_time + PayloadDeployDelay_time) && sensor_data[4]> 5) {  // if (9 +2 + 2) seconds has passed (9 sec delay + 2 sec burn + 5 sec to stabilize) 
+  if ( (a_time - stateStartTime) >  (PayloadDeployDelay_time) && sensor_data[4]> 5) {  // if (9 +2 + 2) seconds has passed (9 sec delay + 2 sec burn + 5 sec to stabilize) 
        state = 4;
+       stateStartTime = a_time;
   }
 }
 
   void seperation() {
       /********FUNCTION task*********/
-   digitalWrite(5, HIGH);  //Nichrome BURN BBAABYY!!!!!!!!!!!!!
+   digitalWrite(nichromePin, HIGH);  //Nichrome BURN BBAABYY!!!!!!!!!!!!!
 
    /********Transition Check*********/
-  if ( (a_time - liftoff_time) >  (RocketBurn_time + RocketDelay_time + PayloadDeployDelay_time + WireBurn_time)) {
+  if ( (a_time - stateStartTime) >  ( WireBurn_time)) {
        state = 5;
        init_Heading = sensor_data[6]; //initialize heading for fin stabilization
+       digitalWrite(nichromePin, LOW);
   }
 }
 
@@ -103,7 +107,7 @@ void ascent() {
    stabilize(init_Heading, sensor_data[4]);  //Fins Activate !!!!!!!!!!!!!
 
    /********Transition Check*********/
-  if (sensor_data[3] < 20 +ground_alt) {
+  if (sensor_data[3] < landedTransitionAlt +ground_alt) {
       servo1.detach();
       servo2.detach();
       state = 6;

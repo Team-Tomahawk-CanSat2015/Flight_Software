@@ -28,7 +28,7 @@ void boot()
   location+=EEPROM_readAnything(location,packet_count);
   location+=EEPROM_readAnything(location,initialize_time);
   location+=EEPROM_readAnything(location,prev_Time);
-  location+=EEPROM_readAnything(location,liftoff_time);
+  location+=EEPROM_readAnything(location,stateStartTime);
   location+=EEPROM_readAnything(location,ground_alt);
   location+=EEPROM_readAnything(location,init_Heading);
   location+=EEPROM_readAnything(location,alt_buffer);
@@ -61,7 +61,7 @@ void saveState()
   location+=EEPROM_writeAnything(location,packet_count);
   location+=EEPROM_writeAnything(location,initialize_time);
   location+=EEPROM_writeAnything(location,prev_Time);
-  location+=EEPROM_writeAnything(location,liftoff_time);
+  location+=EEPROM_writeAnything(location,stateStartTime);
   location+=EEPROM_writeAnything(location,ground_alt);
   location+=EEPROM_writeAnything(location,init_Heading);
   location+=EEPROM_writeAnything(location,alt_buffer);

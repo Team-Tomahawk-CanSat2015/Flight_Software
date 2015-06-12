@@ -61,15 +61,25 @@
     {  *z_alpha = orientation.heading;}
         bmp.getEvent(&bmp_event);
     if (bmp_event.pressure)
-    {float Temp;
-     bmp.getTemperature(&Temp);
-     *Temperature = Temp;
-       float seaLevelPressure = 1013; //units = hpa
-     *Altitude = bmp.pressureToAltitude(seaLevelPressure, bmp_event.pressure, Temp); 
-     
-     //z_rollrate = gyro_event.gyro.z; //rad/s
-     *z_rollrate = (gyro_event.gyro.z) * (180/3.142); //deg/s
-     
+    {
+      float Temp;
+       bmp.getTemperature(&Temp);
+       *Temperature = Temp;
+         float seaLevelPressure = 1013; //units = hpa
+       *Altitude = bmp.pressureToAltitude(seaLevelPressure, bmp_event.pressure, Temp); 
+       
+       //z_rollrate = gyro_event.gyro.z; //rad/s
+       *z_rollrate = (gyro_event.gyro.z) * (180/3.142); //deg/s
+       if (mock)
+       {
+         unsigned long m_time = a_time - initialize_time;
+         if (m_time <= 60)
+           *Altitude = 70; //pre-flight
+         else if (m_time<=4*60)
+           *Altitude = -700.0/(8100.0) *(float)(m_time-60)*(m_time-4*60)+70; //Flight
+         else
+           *Altitude = 70; //buzzer/post-flight
+       }
     }
   }
 
