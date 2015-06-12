@@ -7,7 +7,7 @@
 
 #define RocketBurn_time      2   //sec //From manual
 #define RocketDelay_time      9    //sec //From Manual
-#define PayloadDeployDelay_time  5    //sec //Estimate
+#define PayloadDeployDelay_time  7    //sec //Estimate
 #define WireBurn_time         4   //sec //Estimate
 #define altCalibrationDuration 10
 #define descentRateSamplingPause 500
@@ -43,6 +43,8 @@ unsigned int preResetTime=0;
 
 const char trasmitionDelim = ',';
 
+boolean resetFlag = true;
+
 unsigned int packet_count;
 unsigned int ground_alt;
 float  init_Heading;
@@ -65,10 +67,6 @@ void setup()
   Wire.begin();
   initilize_Adafruit_10_DOF_Sensors();  //Enable adafruit sensors;
   
-  //Configure servo pins
-  servo1.attach (servoOnePin);
-  servo2.attach (servoTwoPin);
-  
   if (digitalRead(memResetBtnPin) == HIGH)
     ClearMemory();
 
@@ -87,6 +85,7 @@ void loop()
 {
   if (digitalRead(memResetBtnPin) == HIGH)
   {
+    resetFlag = true;
     sensor_data[4]=0;
     fix_time = 0;
     preResetTime = millis();
@@ -134,6 +133,7 @@ void loop()
     unsigned int missionTime = a_time-initialize_time;
     transmitData(&missionTime);
     prev_Time = a_time;
+    resetFlag = false;
   }
 }
 
@@ -217,7 +217,7 @@ void calculate_descentRate(float *new_alt,float *descentRate)
          }
       }
       if (numberOfDeltas != 0) 
-        *descentRate =  sum_average_descent_rate_step / numberOfDeltas;
+        *descentRate =  sum_average_descent_rate_step / (float)numberOfDeltas;
   }
 }
 
@@ -252,7 +252,8 @@ void transmitData (unsigned int *missionTime)
       Serial.print(sensor_data[i], 1);
     }
   }
-
+  Serial.print(trasmitionDelim);
+  Serial.print(resetFlag);
   //end transmition
   Serial.println();
 }

@@ -11,7 +11,7 @@
     float headingscaled, ok_offset, fin_angle, deg_rad, gain, y_alpha, x_alpha, z_alpha, z_rollrate, Altitude, Temperature, pos, maxpos, rad_deg;
       bool more_than;
    //Initilizations
-      gain = 0.6;
+      gain = 0.4;
       ok_offset = 5;
       deg_rad = 3.14159/180;
       rad_deg = 180/3.142;
